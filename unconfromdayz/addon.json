@@ -1,0 +1,6 @@
+{
+  "title": "Uncon From DayZ",
+  "description": "Adds uncon from dayz, happens at or  below 19 hp.",
+  "tags": ["server", "dayz", "unconscious"],
+  "type": "server"
+}
