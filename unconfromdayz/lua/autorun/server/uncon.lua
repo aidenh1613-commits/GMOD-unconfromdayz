@@ -19,40 +19,6 @@ local DELAY_AFTER_FADE_IN = 0
 local DURATION_FADE_OUT = 2
 local WAKE_DELAY_AFTER_FADE_OUT = 9
 
-local function SafeRemoveRagdoll(rag)
-    if not IsValid(rag) then return end
-    for i = 0, rag:GetPhysicsObjectCount() - 1 do
-        local bp = rag:GetPhysicsObjectNum(i)
-        if IsValid(bp) then
-            bp:Wake()
-            bp:EnableMotion(true)
-        end
-    end
-    rag:Remove()
-end
-
-resource.AddFile("sound/uncon/dayz_bodyfall.wav")
-
-util.AddNetworkString("UnconDayz_Fade")
-util.AddNetworkString("UnconDayz_BlurOn")
-util.AddNetworkString("UnconDayz_BlurOff")
-util.AddNetworkString("UnconDayz_PlayBodyfall")
-
-print("[UnconDayz] File loaded")
-
-local DAMAGE_THRESHOLD = 20
-local REVIVE_HEALTH = 25
-local COOLDOWN_TIME = 5
-local reviveTimers = {}
-
--- Timing config (seconds)
-local TIME_TO_FADE_IN = 17
-local DURATION_FADE_IN = 2
-local DELAY_AFTER_FADE_IN = 0
-local DURATION_FADE_OUT = 2
-local WAKE_DELAY_AFTER_FADE_OUT = 9
-
--- NOTE: All sound suppression hooks removed as requested.
 
 local function SafeRemoveRagdoll(rag)
     if not IsValid(rag) then return end
@@ -80,7 +46,7 @@ hook.Add("EntityTakeDamage", "UnconDayTrigger", function(ent, dmginfo)
         if ent._unconscious or ent._unconscious_cooldown then return end
         if ent:Health() > UnconDayz_HPThreshold then return end
 
-        -- [Unconscious logic begins]
+        -- logic begins
         ent._unconscious = true
         ent:Freeze(true)
         ent:SetMoveType(MOVETYPE_NONE)
@@ -232,7 +198,7 @@ hook.Add("EntityTakeDamage", "UnconDayTrigger", function(ent, dmginfo)
 end)
 
 
--- Redirect damage from ragdoll to owner, ignore crush/fall so rag collisions don't hurt owner
+-- Redirect damage from ragdoll to owner
 hook.Add("EntityTakeDamage", "UnconDayz_RagdollDamageRedirect", function(target, dmginfo)
     if not IsValid(target) then return end
     if target:GetClass() ~= "prop_ragdoll" then return end
@@ -330,7 +296,7 @@ end
 
 UnconDayz_HPThreshold = 20 -- default HP required to trigger unconsciousness
 
--- Core unconscious routine (call this directly to force unconsciousness)
+-- Core unconscious routine (NtS: call this directly to force unconsciousness)
 function UnconDayz_DoUnconscious(ent)
     if not IsValid(ent) or not ent:IsPlayer() then return false end
     if not ent:Alive() then return false end
@@ -363,7 +329,6 @@ function UnconDayz_DoUnconscious(ent)
     rag:SetAngles(ent:GetAngles())
     rag:Spawn()
 
-    -- immediate bodyfall thud and ensure client plays fallback
     rag:EmitSound("uncon/dayz_bodyfall.wav", 180, 100, 1, CHAN_STATIC)
     net.Start("UnconDayz_PlayBodyfall") net.Send(ent)
 
@@ -396,7 +361,6 @@ function UnconDayz_DoUnconscious(ent)
     rag.UnconOwner = ent
     ent:SetViewEntity(rag)
 
-    -- network fade/blur timing (uses your existing timing constants)
     net.Start("UnconDayz_Fade") net.WriteString("out") net.WriteFloat(0.01) net.WriteFloat(TIME_TO_FADE_IN) net.Send(ent)
     net.Start("UnconDayz_BlurOn") net.Send(ent)
 
@@ -584,7 +548,6 @@ hook.Add("PlayerSay", "UnconDayz_FaintCommand_Debug", function(ply, text)
         return ""
     end
 
-    -- Fallback: function exists but ignored duration or returned false. Try without duration and capture errors.
     local ok2, resOrErr2 = pcall(function() return UnconDayz_DoUnconscious(ply) end)
     if not ok2 then
         print("[UnconDayz] Error calling UnconDayz_DoUnconscious(ply):", resOrErr2)
@@ -603,3 +566,4 @@ hook.Add("PlayerSay", "UnconDayz_FaintCommand_Debug", function(ply, text)
     print("[UnconDayz] !faint failed for " .. ply:Nick() .. " — UnconDayz_DoUnconscious returned false.")
     return ""
 end)
+
