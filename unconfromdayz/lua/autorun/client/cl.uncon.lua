@@ -7,7 +7,6 @@ local blurMaterial = Material("pp/blurscreen")
 net.Receive("UnconDayz_BlurOn", function()
     blurActive = true
     fadeCancelled = false
-    -- Play instantly when going unconscious
     surface.PlaySound("uncon/dayz_bodyfall.wav")
 end)
 
@@ -45,7 +44,7 @@ net.Receive("UnconDayz_Fade", function()
     end
 end)
 
--- Fallback: play server-requested bodyfall
 net.Receive("UnconDayz_PlayBodyfall", function()
     surface.PlaySound("uncon/dayz_bodyfall.wav")
 end)
+
